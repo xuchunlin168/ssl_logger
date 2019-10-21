@@ -56,7 +56,7 @@ _FRIDA_SCRIPT = """
    */
   function initializeGlobals()
   {
-    addresses = {};
+    global.addresses = {};
 
     var resolver = new ApiResolver("module");
 
@@ -113,15 +113,15 @@ _FRIDA_SCRIPT = """
       }
     }
 
-    SSL_get_fd = new NativeFunction(addresses["SSL_get_fd"], "int",
+    global.SSL_get_fd = new NativeFunction(addresses["SSL_get_fd"], "int",
       ["pointer"]);
-    SSL_get_session = new NativeFunction(addresses["SSL_get_session"],
+    global.SSL_get_session = new NativeFunction(addresses["SSL_get_session"],
       "pointer", ["pointer"]);
-    SSL_SESSION_get_id = new NativeFunction(addresses["SSL_SESSION_get_id"],
+    global.SSL_SESSION_get_id = new NativeFunction(addresses["SSL_SESSION_get_id"],
       "pointer", ["pointer", "pointer"]);
-    getpeername = new NativeFunction(addresses["getpeername"], "int", ["int",
+    global.getpeername = new NativeFunction(addresses["getpeername"], "int", ["int",
       "pointer", "pointer"]);
-    getsockname = new NativeFunction(addresses["getsockname"], "int", ["int",
+    global.getsockname = new NativeFunction(addresses["getsockname"], "int", ["int",
       "pointer", "pointer"]);
   }
   initializeGlobals();
@@ -343,20 +343,21 @@ def ssl_log(process, pcap=None, verbose=False, remote=False):
                                   struct.pack(">I", p["src_addr"]))
       dst_addr = socket.inet_ntop(socket.AF_INET,
                                   struct.pack(">I", p["dst_addr"]))
-      print "SSL Session: " + p["ssl_session_id"]
-      print "[%s] %s:%d --> %s:%d" % (
-          p["function"],
-          src_addr,
-          p["src_port"],
-          dst_addr,
-          p["dst_port"])
+      print("SSL Session: " + p["ssl_session_id"])
+      print("[%s] %s:%d --> %s:%d" % (
+                p["function"],
+                src_addr,
+                p["src_port"],
+                dst_addr,
+                p["dst_port"]))
       hexdump.hexdump(data)
-      print
+      print()
     if pcap:
       log_pcap(pcap_file, p["ssl_session_id"], p["function"], p["src_addr"],
                p["src_port"], p["dst_addr"], p["dst_port"], data)
 
   if remote:
+    os.system("adb forward tcp:27042 tcp:27042")
     session=frida.get_remote_device().attach(process)
   else:
     session = frida.attach(process)
@@ -377,7 +378,7 @@ def ssl_log(process, pcap=None, verbose=False, remote=False):
   script.on("message", on_message)
   script.load()
 
-  print "Press Ctrl+C to stop logging."
+  print("Press Ctrl+C to stop logging.")
   try:
     signal.pause()
   except KeyboardInterrupt:
@@ -393,12 +394,12 @@ if __name__ == "__main__":
   class ArgParser(argparse.ArgumentParser):
 
     def error(self, message):
-      print "ssl_logger v" + __version__
-      print "by " + __author__
-      print
-      print "Error: " + message
-      print
-      print self.format_help().replace("usage:", "Usage:")
+      print("ssl_logger v" + __version__)
+      print("by " + __author__)
+      print()
+      print("Error: " + message)
+      print()
+      print(self.format_help().replace("usage:", "Usage:"))
       self.exit(0)
 
   parser = ArgParser(
